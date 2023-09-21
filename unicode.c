@@ -198,24 +198,3 @@ size_t utf8_encode(const uint32_t *in, uint8_t *out, size_t bytelen) {
   *q = 0; // terminate the output
   return (q - out - 1);  
 }
-
-
-
-int main(void) {
-  //  uint8_t *s = (uint8_t *)"おはようございます";
-  uint8_t *s2 = (uint8_t *)"тестовий рядок UTF-8";
-  size_t len = utf8_strlen(s2);
-  printf("utf8_strlen returned %lu.\n", len);
-  uint32_t *result = malloc(sizeof(uint32_t) * (len + 1));
-  size_t num_runes = utf8_decode(s2, result, len);
-  for (int i = 0; i < len; i++) {
-    printf("%08X\n", result[i]);
-  }
-  assert(num_runes == len);
-  size_t utf8len = utf32_bytelen(result);
-  printf("utf32_bytelen returned %lu.\n", utf8len);
-  uint8_t *result2 = malloc(sizeof(uint8_t) * (utf8len + 1));
-  size_t num_bytes = utf8_encode(result, result2, utf8len);
-  printf("Input  (UTF-8)                    = '%s'\n", s2);
-  printf("Output (UTF-8 -> UTF-32 -> UTF-8) = '%s'\n", result2);
-}
