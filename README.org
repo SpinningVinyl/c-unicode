@@ -2,4 +2,4 @@
 
 This is my first attempt at writing non-trivial C code, so please don't be mean :)
 
-This is a tiny library that converts UTF-8 strings to UTF-32 and vice versa.
+This tiny library converts UTF-8 strings to UTF-32 and vice versa.
