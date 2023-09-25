@@ -25,9 +25,9 @@ size_t utf8_rune_size(const uint8_t byte) {
 }
 
 size_t utf8_strlen(const uint8_t *utf8str) {
-  
+
   size_t rune_size;
-  size_t rune_count;
+  size_t rune_count = 0;
   const uint8_t *p = utf8str;
   int panic = 0;
   
@@ -64,6 +64,7 @@ size_t utf8_strlen(const uint8_t *utf8str) {
   } // end while
 
   return rune_count;
+  
 }
 
 
@@ -71,19 +72,18 @@ size_t utf8_decode(const uint8_t *in, uint32_t *out, size_t num_runes) {
 
   size_t inlen = utf8_strlen(in);
   size_t rune_size;
-  size_t n = 0;
-  size_t i = 0;
+  size_t rune_count = 0;
 
   const uint8_t *p = in;
   uint32_t *q = out;
 
   /* test the output buffer */
   if (!out) {
-    fprintf(stderr, "Output buffer is NULL.\n");
+    fprintf(stderr, "utf8_decode: Output buffer is NULL.\n");
     return 0;
   }
 
-  while ((p - in) <= inlen && (q - out) <= num_runes) {
+  while (rune_count <= inlen && (q - out) <= num_runes) {
     rune_size = utf8_rune_size(*p);
     if (1 == rune_size) {
       *q = ((uint32_t) (*p & ~UTF8_ONE_BYTE_MASK));
@@ -102,9 +102,10 @@ size_t utf8_decode(const uint8_t *in, uint32_t *out, size_t num_runes) {
     }
     p += rune_size;
     q += 1;
+    rune_count += 1;
   } // end while
 
-  *q = 0; // append null character to the end of the output buffer
+  *q = '\0'; // append null character to the end of the output buffer
   return (q - out - 1);
 }
 
@@ -134,7 +135,7 @@ size_t utf32_bytelen(const uint32_t *utf32str) {
     if (rune_size != 0) {
       byte_count += rune_size;
     } else {
-      fprintf(stderr, "Invalid UTF-32 codepoint at %lu.\n", p - utf32str);
+      fprintf(stderr, "utf32_bytelen: Invalid UTF-32 codepoint at %lu.\n", p - utf32str);
       return 0;
     }
     p += 1;
@@ -146,7 +147,7 @@ size_t utf32_bytelen(const uint32_t *utf32str) {
 size_t utf32_cp_to_utf8_rune(uint32_t codepoint, uint8_t *out) {
   size_t rune_size = utf32_cp_bytesize(codepoint);
   if (0 == rune_size) {
-    fprintf(stderr, "Invalid UTF-32 codepoint.\n");
+    fprintf(stderr, "utf32_cp_to_utf8_rune: Invalid UTF-32 codepoint.\n");
     return 0;
   }
   if (1 == rune_size) {
@@ -179,17 +180,22 @@ size_t utf8_encode(const uint32_t *in, uint8_t *out, size_t bytelen) {
 
   // test the output buffer
   if (!out) {
-    fprintf(stderr, "Output buffer is NULL.\n");
+    fprintf(stderr, "utf8_encode: Output buffer is NULL.\n");
     return 0;
   }
     
   const uint32_t *p = in;
   uint8_t *q = out;
 
-  while ((*p != 0) && (q - out) <= bytelen) {
+  while ((*p != '\0') && (q - out) <= bytelen) {
     rune_size = utf32_cp_to_utf8_rune(*p, cbuf);
     for (i = 0; i < rune_size; i++) {
-      *(q + i) = cbuf[i];
+      if ((q + i - out) <= bytelen) {
+        *(q + i) = *(cbuf + i);
+      } else {
+        fprintf(stderr, "utf8_encode: Output buffer overflow.\n");
+	return 0;
+      }
     }
     q += rune_size;
     p += 1;
